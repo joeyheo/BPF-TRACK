@@ -2,6 +2,26 @@
 
 This project upgrades your original phone-to-PC WebSocket demo into a measurement-focused test platform for pseudo-telemetry validation.
 
+## Production URLs
+
+Frontend:
+
+```text
+https://gps-pseudotelemetry-lab.vercel.app/
+```
+
+WebSocket relay:
+
+```text
+wss://gpspseudotelemetrylab-production.up.railway.app
+```
+
+Internal server port:
+
+```text
+8080
+```
+
 ## What it measures
 
 Instead of mixing everything into one vague “delay,” this version measures three different timing behaviors:
@@ -24,15 +44,44 @@ It also logs:
 - monitor interarrival interval
 - packet continuity for each sequence number
 
-## Why this matters
-
-The web geolocation API does **not** give you a fixed guaranteed update interval. The real update behavior depends on the phone, browser, OS location stack, permission state, and environment. That means you should **measure it directly** instead of assuming 1 Hz or any other fixed value.
-
 ## Project structure
 
 ```text
 client/   React + Vite frontend
 server/   Node.js WebSocket relay and time sync server
+```
+
+## Production environment values
+
+### Vercel frontend
+
+Set this environment variable:
+
+```text
+VITE_WS_URL=wss://gpspseudotelemetrylab-production.up.railway.app
+```
+
+Use these Vercel settings:
+
+- Framework Preset: `Vite`
+- Root Directory: `client`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- Install Command: `npm install`
+
+### Railway server
+
+Set these environment variables:
+
+```text
+PORT=8080
+ALLOWED_ORIGINS=https://gps-pseudotelemetry-lab.vercel.app,http://localhost:5173,http://127.0.0.1:5173
+```
+
+The server also exposes a simple health endpoint:
+
+```text
+https://gpspseudotelemetrylab-production.up.railway.app/health
 ```
 
 ## Run locally
@@ -41,6 +90,7 @@ server/   Node.js WebSocket relay and time sync server
 
 ```bash
 cd server
+cp .env.example .env
 npm install
 npm run dev
 ```
@@ -55,14 +105,9 @@ ws://localhost:8080
 
 ```bash
 cd client
+cp .env.example .env.local
 npm install
 npm run dev
-```
-
-By default the client runs on:
-
-```text
-http://localhost:5173
 ```
 
 ### 3) Open two devices
@@ -70,20 +115,6 @@ http://localhost:5173
 - Open the **Phone transmitter** page on your phone browser.
 - Open the **Monitor dashboard** page on your laptop or ground-station computer.
 - Use the **same session ID** on both.
-
-## Deploying for real field tests
-
-For field tests, you will usually want:
-
-- the server deployed on a public host
-- `wss://...` instead of `ws://...`
-- the site served over HTTPS
-
-Examples:
-- Render
-- Railway
-- Fly.io
-- a small VPS with Nginx reverse proxy
 
 ## Suggested experiments
 

@@ -7,7 +7,7 @@ import { downloadCsv } from '../utils/export';
 import { formatMs, formatNumber, nowEpochMs, isoNow } from '../utils/time';
 
 const MAX_LOGS = 600;
-const DEFAULT_SERVER = 'ws://localhost:8080';
+const DEFAULT_SERVER = import.meta.env.VITE_WS_URL || 'wss://gpspseudotelemetrylab-production.up.railway.app';
 
 export default function PhonePage() {
   const [params] = useSearchParams();

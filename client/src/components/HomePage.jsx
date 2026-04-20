@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-const defaultServerUrl = 'ws://localhost:8080';
+const defaultServerUrl = import.meta.env.VITE_WS_URL || 'wss://gpspseudotelemetrylab-production.up.railway.app';
 
 export default function HomePage() {
   const [sessionId, setSessionId] = useState('rocket-test-01');

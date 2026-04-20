@@ -9,7 +9,7 @@ import { downloadCsv } from '../utils/export';
 import { formatMs, formatNumber, nowEpochMs } from '../utils/time';
 
 const MAX_SAMPLES = 1000;
-const DEFAULT_SERVER = 'ws://localhost:8080';
+const DEFAULT_SERVER = import.meta.env.VITE_WS_URL || 'wss://gpspseudotelemetrylab-production.up.railway.app';
 
 export default function MonitorPage() {
   const [params] = useSearchParams();
