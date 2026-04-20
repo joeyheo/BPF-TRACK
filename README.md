@@ -1,161 +1,99 @@
-# GPS Pseudo-Telemetry Lab
+# [BPF-TRACK] Browser-based Pseudo-telemetry Framework for early-stage functional validation of directional TRACKing systems
 
-This project upgrades your original phone-to-PC WebSocket demo into a measurement-focused test platform for pseudo-telemetry validation.
+**Companion repository for:** *An Open-Source Browser-Based Pseudo-Telemetry Framework for Early-Stage Functional Validation of Directional Tracking Systems*, Joey Heo, AIAA Journal of Aerospace Information Systems, submitted 2026.
 
-## Production URLs
+## What this is
 
-Frontend:
+This is a small, commodity-hardware framework that lets you drive a directional tracker — an antenna tracker, a camera mount, or any other position-responsive pointing system — from a **smartphone acting as a moving surrogate target**. Your phone's browser streams its position over WebSocket; a ground-side PC receives the stream and uses it as pseudo-telemetry in place of a real live target.
 
-```text
-https://gps-pseudotelemetry-lab.vercel.app/
-```
+It's intended to fill the awkward gap between software-only simulation and full integrated field test: you can exercise your *real* telemetry-to-motion chain without relocating your actual target-generating system for every iteration.
 
-WebSocket relay:
+## What the paper measured
 
-```text
-wss://gpspseudotelemetrylab-production.up.railway.app
-```
+Over a 385-sample outdoor field run:
+- Update rate: stable **1 Hz** (95th-percentile callback interval 1008 ms)
+- Reported horizontal accuracy: **6.92 m** mean
+- End-to-end latency: **113.5 ms** mean, **139.5 ms** at the 95th percentile
+- **100%** of samples arrived within one update period → qualifies as *soft real-time*
+- Zero sequence gaps
 
-Internal server port:
+The paper also derives an operating envelope: required tracker slew rate, angular pointing uncertainty, and minimum usable range for representative antenna beamwidths.
 
-```text
-8080
-```
+## Quick start
 
-## What it measures
+### Live demo
+- Frontend: https://gps-pseudotelemetry-lab.vercel.app/
+- WebSocket relay: `wss://gpspseudotelemetrylab-production.up.railway.app`
 
-Instead of mixing everything into one vague “delay,” this version measures three different timing behaviors:
+Open the phone transmitter page on your phone, the monitor dashboard on your laptop, use the same session ID, and start streaming.
 
-1. **Geolocation callback interval on the phone**
-   - How often `navigator.geolocation.watchPosition()` actually fires.
-   - This is the best way to find the practical location update rate of a phone/browser combination in the field.
+### Run locally
 
-2. **Approximate phone-to-server latency**
-   - Uses lightweight time sync between the phone browser and the server.
-   - Lets you estimate the time from phone send to server receive.
-
-3. **Approximate end-to-end phone-to-monitor latency**
-   - Uses the same server clock as a common reference.
-   - Lets you estimate the total time from phone send to monitor receipt.
-
-It also logs:
-- geolocation timestamp age at send
-- server-to-monitor latency
-- monitor interarrival interval
-- packet continuity for each sequence number
-
-## Project structure
-
-```text
-client/   React + Vite frontend
-server/   Node.js WebSocket relay and time sync server
-```
-
-## Production environment values
-
-### Vercel frontend
-
-Set this environment variable:
-
-```text
-VITE_WS_URL=wss://gpspseudotelemetrylab-production.up.railway.app
-```
-
-Use these Vercel settings:
-
-- Framework Preset: `Vite`
-- Root Directory: `client`
-- Build Command: `npm run build`
-- Output Directory: `dist`
-- Install Command: `npm install`
-
-### Railway server
-
-Set these environment variables:
-
-```text
-PORT=8080
-ALLOWED_ORIGINS=https://gps-pseudotelemetry-lab.vercel.app,http://localhost:5173,http://127.0.0.1:5173
-```
-
-The server also exposes a simple health endpoint:
-
-```text
-https://gpspseudotelemetrylab-production.up.railway.app/health
-```
-
-## Run locally
-
-### 1) Start the WebSocket server
-
+**Server (relay):**
 ```bash
 cd server
 cp .env.example .env
 npm install
-npm run dev
+npm run dev      # listens on ws://localhost:8080
 ```
 
-By default the server runs on:
-
-```text
-ws://localhost:8080
-```
-
-### 2) Start the React client
-
+**Client (React + Vite):**
 ```bash
 cd client
 cp .env.example .env.local
 npm install
-npm run dev
+npm run dev      # served at http://localhost:5173
 ```
 
-### 3) Open two devices
+Then open the phone transmitter on your phone browser and the monitor dashboard on your ground-station computer, using the same session ID on both.
 
-- Open the **Phone transmitter** page on your phone browser.
-- Open the **Monitor dashboard** page on your laptop or ground-station computer.
-- Use the **same session ID** on both.
+## Project layout
+
+```
+client/   React + Vite frontend (phone transmitter + monitor dashboard)
+server/   Node.js WebSocket relay + time-sync endpoint
+data/     Retained field-run CSV underlying the paper
+scripts/  Analysis scripts that reproduce the tables in the paper
+```
+
+## What it logs per packet
+
+- sequence number, phone callback interval, geolocation age at send
+- server receive time, server forward time (for latency decomposition)
+- monitor receive time, monitor interarrival interval
+- phone-to-server, server-to-monitor, and end-to-end latency estimates
+- latitude, longitude, altitude, browser-reported horizontal accuracy
+
+All downloadable as CSV from the monitor UI.
 
 ## Suggested experiments
 
-### A. Standing still outdoors
-Purpose:
-- measure the baseline callback interval and network delay
-- inspect raw jitter when motion is minimal
-
-### B. Walking test
-Purpose:
-- measure callback interval under low-speed motion
-- inspect continuity and stale-data behavior
-
-### C. Vehicle test
-Purpose:
-- test higher-speed target motion
-- inspect whether interarrival timing stays smooth enough for tracker use
-
-### D. Forced dropout test
-Purpose:
-- turn Wi-Fi off briefly or move into weak service
-- measure reconnect delay and packet discontinuity
-
-## What to analyze later
-
-Export the CSVs and compute:
-
-- mean / median / p95 callback interval
-- mean / median / p95 phone-to-server latency
-- mean / median / p95 end-to-end latency
-- packet drop count from sequence gaps
-- stale position rate
-- compare browser, phone model, and network type
+- **Standing still outdoors** — baseline callback interval and jitter
+- **Walking test** — callback behavior under low-speed motion
+- **Vehicle test** — higher-speed motion; check interarrival stability
+- **Forced dropout** — briefly disable Wi-Fi; measure reconnect and packet gaps
+- **Cross-device sweep** — same test on multiple phones/browsers for the multi-device survey mentioned in the paper's Future Work section
 
 ## Important limitations
 
-This system is useful for **application-layer pseudo-telemetry validation**. It is **not**:
-
+This framework is useful for **application-layer pseudo-telemetry validation**. It is **not**:
 - an RF telemetry test
 - a GNSS receiver qualification setup
 - a precision truth source
-- a deterministic real-time network test bench
+- a deterministic hard-real-time network test bench
 
-It is best used as an intermediate validation layer between desktop simulation and full integrated tracker tests.
+It is best used as an intermediate validation layer between desktop simulation and full integrated tracker tests. See Sec. VII of the paper for the full limitation discussion.
+
+## Citing this work
+
+If you use this framework in academic or engineering work, please cite:
+
+> Heo, J., "An Open-Source Browser-Based Pseudo-Telemetry Framework for Early-Stage Functional Validation of Directional Tracking Systems," *Journal of Aerospace Information Systems*, 2026.
+
+## License
+
+Permissive open-source license (MIT recommended). See `LICENSE` in the repository.
+
+## Contact
+
+Joey Heo, Franklin W. Olin College of Engineering — `jheo@olin.edu`
