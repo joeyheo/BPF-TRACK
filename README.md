@@ -1,5 +1,7 @@
 # BPF-TRACK: Browser-based Pseudo-telemetry Framework for early-stage functional validation of directional TRACKing systems
 
+**Repository:** <https://github.com/joeyheo/BPF-TRACK>
+
 **Companion repository for:** *An Open-Source Browser-Based Pseudo-Telemetry Framework for Early-Stage Functional Validation of Directional Tracking Systems*, Sunghyun (Joey) Heo, AIAA Journal of Aerospace Information Systems, submitted 2026.
 
 ## What this is
